@@ -5,77 +5,79 @@
 <title>Solicitud de Reintegro</title>
 
 <style>
+
 body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:linear-gradient(135deg,#1fa2d6,#2bc0e4);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+margin:0;
+font-family:Arial, sans-serif;
+background:linear-gradient(135deg,#1fa2d6,#2bc0e4);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
 }
 
 .container{
-  background:white;
-  width:420px;
-  padding:30px;
-  border-radius:12px;
-  box-shadow:0 20px 45px rgba(0,0,0,0.25);
+background:white;
+width:420px;
+padding:30px;
+border-radius:12px;
+box-shadow:0 20px 45px rgba(0,0,0,0.25);
 }
 
 .logo{
-  text-align:center;
-  margin-bottom:15px;
+text-align:center;
+margin-bottom:15px;
 }
 
 .logo img{
-  width:140px;
+width:140px;
 }
 
 h3{
-  text-align:center;
-  margin-bottom:20px;
+text-align:center;
+margin-bottom:20px;
 }
 
 input{
-  width:100%;
-  padding:10px;
-  margin-bottom:12px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  box-sizing:border-box;
+width:100%;
+padding:10px;
+margin-bottom:12px;
+border-radius:8px;
+border:1px solid #ccc;
+box-sizing:border-box;
 }
 
 button{
-  width:100%;
-  padding:12px;
-  background:#0099cc;
-  color:white;
-  border:none;
-  border-radius:8px;
-  font-weight:bold;
-  cursor:pointer;
+width:100%;
+padding:12px;
+background:#0099cc;
+color:white;
+border:none;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
 }
 
 button:disabled{
-  background:#7fbfd4;
+background:#7fbfd4;
 }
 
 .message{
-  margin-top:20px;
-  text-align:center;
+margin-top:20px;
+text-align:center;
 }
 
 .message img{
-  width:60px;
-  margin-bottom:10px;
+width:60px;
+margin-bottom:10px;
 }
 
 .case{
-  font-size:18px;
-  font-weight:bold;
-  margin-bottom:8px;
+font-size:18px;
+font-weight:bold;
+margin-bottom:8px;
 }
+
 </style>
 </head>
 
@@ -84,28 +86,29 @@ button:disabled{
 <div class="container">
 
 <div class="logo">
-<img src="logo.png" alt="Personal">
+<img src="logo.png">
 </div>
 
 <h3>Solicitud de Reintegro</h3>
 
 <form id="formulario">
 
-<input type="text" name="dni" placeholder="DNI del titular" required>
-<input type="text" name="nombre" placeholder="Nombre del titular" required>
-<input type="text" name="cuil" placeholder="CUIL del titular" required>
-<input type="text" name="cbu" placeholder="CBU" required>
+<input name="dni" placeholder="DNI del titular" required>
 
-<!-- 📱 Se guarda en columna Fecha -->
-<input type="tel" name="fecha_llamar" placeholder="Número de teléfono 📱" required>
+<input name="nombre" placeholder="Nombre del titular" required>
 
-<!-- 📧 Se guarda en columna Horario -->
-<input type="email" name="horario_llamar" placeholder="Correo electrónico 📧" required>
+<input name="telefono_cliente" placeholder="N° de contacto del cliente" required>
 
-<label>Adjunta el comprobante</label>
-<input type="file" id="comprobanteFile" accept="image/*,.pdf" required>
+<input name="cbu" placeholder="CBU / CVU" required>
 
-<input type="hidden" name="motivo" value="Solicitud de reintegro">
+<input name="cuil" placeholder="CUIL titular de la cuenta" required>
+
+<label>Adjuntar comprobante (opcional)</label>
+<input type="file" id="file" accept="image/*,.pdf">
+
+<input name="telefono" placeholder="N° de contacto" required>
+
+<input type="email" name="email" placeholder="Correo electrónico" required>
 
 <button type="submit">Enviar solicitud</button>
 
@@ -117,79 +120,88 @@ button:disabled{
 
 <script>
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbwCfihDx97b4W683eppoS2ldNrzfqSD_vosQGq6YfKjd7Fm6V7fDQx6Wjdm7oWEX3CmGw/exec";
+const scriptURL="https://script.google.com/macros/s/AKfycbwUuwrZ5i27QrkGtV_VWkZCNB5lNVQo_wH_9aGwxN1EPMUMDLdEGG6LPRDb-K5hYsPEqw/exec";
 
-const form = document.getElementById("formulario");
-const mensaje = document.getElementById("mensaje");
-const button = form.querySelector("button");
+const form=document.getElementById("formulario");
+const mensaje=document.getElementById("mensaje");
+const button=form.querySelector("button");
 
 function convertirBase64(file){
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = ()=> resolve(reader.result.split(',')[1]);
-    reader.onerror = error => reject(error);
-  });
+return new Promise((resolve,reject)=>{
+const reader=new FileReader();
+reader.readAsDataURL(file);
+reader.onload=()=>resolve(reader.result.split(',')[1]);
+reader.onerror=error=>reject(error);
+});
 }
 
-form.addEventListener("submit", async function(e){
-  e.preventDefault();
+form.addEventListener("submit",async function(e){
 
-  button.disabled = true;
-  button.innerText = "Enviando...";
+e.preventDefault();
 
-  const file = document.getElementById("comprobanteFile").files[0];
-  const base64 = await convertirBase64(file);
+button.disabled=true;
+button.innerText="Enviando...";
 
-  const formData = new FormData(form);
-  formData.append("comprobante", base64);
+const file=document.getElementById("file").files[0];
 
-  fetch(scriptURL,{
-    method:"POST",
-    body:formData
-  })
-  .then(res=>res.text())
-  .then(result=>{
+let base64="";
 
-    const mensajeResolucion = `
-      <div style="margin-top:10px; font-size:14px;">
-      Esta gestión puede llevar hasta <strong>7 días hábiles</strong> para su resolución.
-      Te estaremos confirmando a tu correo electrónico o por llamada telefónica.
-      </div>
-    `;
+if(file){
+base64=await convertirBase64(file);
+}
 
-    if(result === "YA_EXISTE"){
-      mensaje.innerHTML = `
-        <img src="x-roja.png">
-        <div style="font-weight:bold; margin-bottom:8px;">
-          Ya registraste una solicitud en las últimas 24hs.
-        </div>
-        ${mensajeResolucion}
-      `;
-    } else {
-      mensaje.innerHTML = `
-        <img src="tilde-verificacion.png">
-        <div class="case">
-          Número de caso: ${result}
-        </div>
-        ${mensajeResolucion}
-      `;
-    }
+const formData=new FormData(form);
 
-    form.style.display="none";
-  })
-  .catch(()=>{
-    mensaje.innerText="Error al enviar el formulario.";
-    button.disabled = false;
-    button.innerText = "Enviar solicitud";
-  });
+if(base64){
+formData.append("comprobante",base64);
+}
+
+fetch(scriptURL,{
+method:"POST",
+body:formData
+})
+.then(res=>res.text())
+.then(result=>{
+
+const mensajeResolucion=`
+<div style="margin-top:10px;font-size:14px;">
+Esta gestión puede llevar hasta <strong>7 días hábiles</strong> para su resolución.
+Te estaremos confirmando a tu correo electrónico o por llamada telefónica.
+</div>
+`;
+
+if(result==="YA_EXISTE"){
+
+mensaje.innerHTML=`
+<img src="x-roja.png">
+<div style="font-weight:bold;margin-bottom:8px;">
+Ya registraste una solicitud en las últimas 24hs.
+</div>
+${mensajeResolucion}
+`;
+
+}else{
+
+mensaje.innerHTML=`
+<img src="tilde-verificacion.png">
+<div class="case">Número de caso: ${result}</div>
+${mensajeResolucion}
+`;
+
+}
+
+form.style.display="none";
+
+})
+.catch(()=>{
+mensaje.innerText="Error al enviar el formulario.";
+button.disabled=false;
+button.innerText="Enviar solicitud";
+});
 
 });
+
 </script>
 
 </body>
 </html>
-
-
-
-
