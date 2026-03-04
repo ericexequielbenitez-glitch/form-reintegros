@@ -2,66 +2,78 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solicitud de Reintegro</title>
 
 <style>
-
-body{
-margin:0;
-font-family:Arial;
-background:linear-gradient(135deg,#1fa2d6,#2bc0e4);
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  margin: 0;
+  padding: 0;
 }
 
-.container{
-background:white;
-width:420px;
-padding:35px;
-border-radius:12px;
-box-shadow:0 15px 40px rgba(0,0,0,0.2);
-text-align:center;
+.container {
+  width: 90%;
+  max-width: 420px;
+  margin: 30px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
-.logo{
-font-size:32px;
-color:#00a9e0;
-font-weight:bold;
-margin-bottom:10px;
+.logo img {
+  width: 120px;
+  display: block;
+  margin: 0 auto 20px;
 }
 
-input{
-width:100%;
-padding:10px;
-margin-bottom:12px;
-border-radius:8px;
-border:1px solid #ccc;
+h3 {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-button{
-width:100%;
-padding:13px;
-background:#00a9e0;
-color:white;
-border:none;
-border-radius:8px;
-font-weight:bold;
-cursor:pointer;
+input, select {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
 }
 
-.result{
-display:none;
-margin-top:20px;
+button {
+  width: 100%;
+  padding: 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
-.case{
-font-size:20px;
-font-weight:bold;
-margin-top:10px;
+button:hover {
+  background: #0056b3;
 }
 
+.message {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.message img {
+  width: 80px;
+  display: block;
+  margin: 0 auto 10px;
+}
+
+.case {
+  font-weight: bold;
+  margin-top: 10px;
+}
 </style>
 </head>
 
@@ -69,122 +81,82 @@ margin-top:10px;
 
 <div class="container">
 
-<div class="logo">personal</div>
+<div class="logo">
+<img src="logo.png" alt="Logo">
+</div>
 
-<h2>Solicitud de Reintegro</h2>
+<h3>Solicitud de Reintegro</h3>
 
-<form id="form">
+<form id="formulario">
 
-<input id="dni" placeholder="DNI del titular" required>
+<input type="text" name="nombre" placeholder="Nombre y apellido" required>
+<input type="text" name="dni" placeholder="DNI" required>
+<input type="text" name="cuil" placeholder="CUIL" required>
+<input type="text" name="cbu" placeholder="CBU/CVU" required>
+<input type="email" name="correo" placeholder="Correo electrónico" required>
 
-<input id="nombre" placeholder="Nombre del titular" required>
-
-<input id="telefono_cliente" placeholder="N° de contacto del cliente" required>
-
-<input id="cbu" placeholder="CBU / CVU" required>
-
-<input id="cuil" placeholder="CUIL titular de la cuenta" required>
-
-<input type="file" id="file">
-
-<input id="telefono" placeholder="N° de contacto" required>
-
-<input id="email" placeholder="Correo electrónico" required>
+<label>Adjunta el comprobante</label>
+<input type="file" id="comprobanteFile" accept="image/*,.pdf" required>
 
 <button type="submit">Enviar solicitud</button>
 
 </form>
 
-<div class="result" id="result"></div>
+<div class="message" id="mensaje"></div>
 
 </div>
 
 <script>
 
-const scriptURL="https://script.google.com/macros/s/AKfycbwnGEc7kIKVFvkBIF7M6T_Sk8aM7UDkDKX4VoFvO3wrn9eEnBw_ZTAtFsbv-O4XNqt1yQ/exec"
+const scriptURL = "https://script.google.com/macros/s/AKfycbx9MmByPUA7HrmWfP4rZLYcsid1BNKM-Kt8k5WgBtoD3PfIGigCGXx_eii55t-M64Vh/exec";
 
-const form=document.getElementById("form")
-const result=document.getElementById("result")
+const form = document.getElementById("formulario");
+const mensaje = document.getElementById("mensaje");
 
-form.addEventListener("submit",async e=>{
-
-e.preventDefault()
-
-const file=document.getElementById("file").files[0]
-
-let base64=""
-
-if(file){
-
-const reader=new FileReader()
-
-reader.onload=async function(){
-
-base64=reader.result.split(",")[1]
-
-send(base64)
-
+function convertirBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = ()=> resolve(reader.result.split(',')[1]);
+    reader.onerror = error => reject(error);
+  });
 }
 
-reader.readAsDataURL(file)
+form.addEventListener("submit", async function(e){
+  e.preventDefault();
 
-}else{
+  const file = document.getElementById("comprobanteFile").files[0];
+  const base64 = await convertirBase64(file);
 
-send("")
+  const formData = new FormData(form);
+  formData.append("comprobante", base64);
 
-}
+  fetch(scriptURL,{
+    method:"POST",
+    body:formData
+  })
+  .then(res=>res.text())
+  .then(result=>{
+    if(result === "YA_EXISTE"){
+      mensaje.innerHTML = `
+        <img src="x-roja.png">
+        <div>Ya registraste una solicitud en las últimas 24hs.</div>
+      `;
+    } else {
+      mensaje.innerHTML = `
+        <img src="tilde-verificacion.png">
+        <div class="case">Número de caso: ${result}</div>
+        <div>Te contactaremos dentro de 24 a 48hs hábiles.</div>
+      `;
+    }
+    form.style.display="none";
+  })
+  .catch(()=>{
+    mensaje.innerText="Error al enviar el formulario.";
+  });
 
-})
-
-function send(base64){
-
-const data={
-dni:document.getElementById("dni").value,
-nombre:document.getElementById("nombre").value,
-telefono_cliente:document.getElementById("telefono_cliente").value,
-cbu:document.getElementById("cbu").value,
-cuil:document.getElementById("cuil").value,
-telefono:document.getElementById("telefono").value,
-email:document.getElementById("email").value,
-comprobante:base64
-}
-
-fetch(scriptURL,{
-method:"POST",
-body:JSON.stringify(data)
-})
-.then(res=>res.text())
-.then(res=>{
-
-form.style.display="none"
-result.style.display="block"
-
-if(res==="YA_EXISTE"){
-
-result.innerHTML=`
-<div style="font-size:45px;color:red">✖</div>
-<div>Ya registraste una solicitud en las últimas 24hs.</div>
-<div>Esta gestión puede llevar hasta 7 días hábiles para su resolución.</div>
-`
-
-}else{
-
-result.innerHTML=`
-<div style="font-size:45px;color:green">✔</div>
-<div>Número de caso</div>
-<div class="case">${res}</div>
-<div>Esta gestión puede llevar hasta 7 días hábiles para su resolución.</div>
-`
-
-}
-
-})
-
-}
-
+});
 </script>
 
 </body>
 </html>
-
-
