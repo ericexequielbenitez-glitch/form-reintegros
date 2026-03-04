@@ -8,7 +8,7 @@
 
 body{
 margin:0;
-font-family:Arial, sans-serif;
+font-family:Arial;
 background:linear-gradient(135deg,#1fa2d6,#2bc0e4);
 display:flex;
 justify-content:center;
@@ -32,17 +32,12 @@ font-weight:bold;
 margin-bottom:10px;
 }
 
-h2{
-margin-bottom:20px;
-}
-
 input{
 width:100%;
 padding:10px;
 margin-bottom:12px;
 border-radius:8px;
 border:1px solid #ccc;
-font-size:14px;
 }
 
 button{
@@ -54,10 +49,6 @@ border:none;
 border-radius:8px;
 font-weight:bold;
 cursor:pointer;
-}
-
-button:hover{
-background:#008bb8;
 }
 
 .result{
@@ -84,22 +75,21 @@ margin-top:10px;
 
 <form id="form">
 
-<input name="dni" placeholder="DNI del titular" required>
+<input id="dni" placeholder="DNI del titular" required>
 
-<input name="nombre" placeholder="Nombre del titular" required>
+<input id="nombre" placeholder="Nombre del titular" required>
 
-<input name="telefono_cliente" placeholder="N° de contacto del titular nuevo" required>
+<input id="telefono_cliente" placeholder="N° de contacto del cliente" required>
 
-<input name="cbu" placeholder="CBU / CVU" required>
+<input id="cbu" placeholder="CBU / CVU" required>
 
-<input name="cuil" placeholder="CUIL titular de la cuenta" required>
+<input id="cuil" placeholder="CUIL titular de la cuenta" required>
 
-<label>Adjuntar comprobante (opcional)</label>
 <input type="file" id="file">
 
-<input name="telefono" placeholder="N° de contacto" required>
+<input id="telefono" placeholder="N° de contacto" required>
 
-<input name="email" placeholder="Correo electrónico" required>
+<input id="email" placeholder="Correo electrónico" required>
 
 <button type="submit">Enviar solicitud</button>
 
@@ -120,9 +110,9 @@ form.addEventListener("submit",async e=>{
 
 e.preventDefault()
 
-const data=new FormData(form)
-
 const file=document.getElementById("file").files[0]
+
+let base64=""
 
 if(file){
 
@@ -130,11 +120,9 @@ const reader=new FileReader()
 
 reader.onload=async function(){
 
-const base64=reader.result.split(",")[1]
+base64=reader.result.split(",")[1]
 
-data.append("comprobante",base64)
-
-send(data)
+send(base64)
 
 }
 
@@ -142,23 +130,33 @@ reader.readAsDataURL(file)
 
 }else{
 
-send(data)
+send("")
 
 }
 
 })
 
-async function send(data){
+function send(base64){
+
+const data={
+dni:document.getElementById("dni").value,
+nombre:document.getElementById("nombre").value,
+telefono_cliente:document.getElementById("telefono_cliente").value,
+cbu:document.getElementById("cbu").value,
+cuil:document.getElementById("cuil").value,
+telefono:document.getElementById("telefono").value,
+email:document.getElementById("email").value,
+comprobante:base64
+}
 
 fetch(scriptURL,{
 method:"POST",
-body:data
+body:JSON.stringify(data)
 })
 .then(res=>res.text())
 .then(res=>{
 
 form.style.display="none"
-
 result.style.display="block"
 
 if(res==="YA_EXISTE"){
