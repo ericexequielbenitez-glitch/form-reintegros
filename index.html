@@ -1,66 +1,194 @@
-function doGet(e) {
-  return ContentService
-    .createTextOutput("WebApp activo. Este endpoint espera solicitudes POST desde el formulario.")
-    .setMimeType(ContentService.MimeType.TEXT);
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitud de Reintegro</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  margin: 0;
+  padding: 0;
 }
 
-function doPost(e) {
-  const ss = SpreadsheetApp.openById("1AHiUzVnpoB_oLsEXmVtrYQlSQAB9omuprd6xyfexUcU");
-  const sheet = ss.getSheetByName("Hoja 1"); // Cambiar si tu hoja tiene otro nombre
+.container {
+  width: 90%;
+  max-width: 420px;
+  margin: 30px auto;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
 
-  const data = e.parameter;
+.logo img {
+  width: 120px;
+  display: block;
+  margin: 0 auto 20px;
+}
 
-  const nombre = data.nombre;
-  const dni = data.dni;
-  const cuil = data.cuil;
-  const cbu = data.cbu;
-  const correo = data.correo;
-  const comprobanteBase64 = data.comprobante;
+h3 {
+  text-align: center;
+  margin-bottom: 20px;
+}
 
-  // CONTROL DE DUPLICADOS (24HS)
-  const rows = sheet.getDataRange().getValues();
-  const now = new Date();
-  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+input, select {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+}
 
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    const rowTimestamp = new Date(row[0]);
-    const rowDni = row[2];
-    const rowCuil = row[3];
+button {
+  width: 100%;
+  padding: 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
 
-    if ((rowDni == dni || rowCuil == cuil) && rowTimestamp >= dayAgo) {
-      return ContentService.createTextOutput("YA_EXISTE");
+button:disabled {
+  background: #7aaef5;
+  cursor: not-allowed;
+}
+
+.message {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.message img {
+  width: 80px;
+  display: block;
+  margin: 0 auto 10px;
+}
+
+.case {
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* Loader */
+.loader {
+  display: none;
+  margin: 20px auto;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #007bff;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="logo">
+<img src="logo.png" alt="Logo">
+</div>
+
+<h3>Solicitud de Reintegro</h3>
+
+<form id="formulario">
+
+<input type="text" name="nombre" placeholder="Nombre y apellido" required>
+<input type="text" name="dni" placeholder="DNI" required>
+<input type="text" name="cuil" placeholder="CUIL" required>
+<input type="text" name="cbu" placeholder="CBU/CVU" required>
+<input type="email" name="correo" placeholder="Correo electrónico" required>
+
+<label>Adjunta el comprobante</label>
+<input type="file" id="comprobanteFile" accept="image/*,.pdf" required>
+
+<button id="btnEnviar" type="submit">Enviar solicitud</button>
+
+</form>
+
+<div class="loader" id="loader"></div>
+
+<div class="message" id="mensaje"></div>
+
+</div>
+
+<script>
+
+const scriptURL = "https://script.google.com/macros/s/AKfycbx9MmByPUA7HrmWfP4rZLYcsid1BNKM-Kt8k5WgBtoD3PfIGigCGXx_eii55t-M64Vh/exec";
+
+const form = document.getElementById("formulario");
+const mensaje = document.getElementById("mensaje");
+const loader = document.getElementById("loader");
+const btnEnviar = document.getElementById("btnEnviar");
+
+function convertirBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = ()=> resolve(reader.result.split(',')[1]);
+    reader.onerror = error => reject(error);
+  });
+}
+
+form.addEventListener("submit", async function(e){
+  e.preventDefault();
+
+  const file = document.getElementById("comprobanteFile").files[0];
+  const base64 = await convertirBase64(file);
+
+  const formData = new FormData(form);
+  formData.append("comprobante", base64);
+
+  // Bloqueo del botón (solo una vez)
+  btnEnviar.disabled = true;
+  btnEnviar.textContent = "Enviando...";
+  loader.style.display = "block";
+
+  fetch(scriptURL,{
+    method:"POST",
+    body:formData
+  })
+  .then(res=>res.text())
+  .then(result=>{
+    loader.style.display = "none";
+
+    if(result === "YA_EXISTE"){
+      mensaje.innerHTML = `
+        <img src="x-roja.png">
+        <div>Ya registraste una solicitud en las últimas 24hs.</div>
+      `;
+    } else {
+      mensaje.innerHTML = `
+        <img src="tilde-verificacion.png">
+        <div class="case">Número de caso: ${result}</div>
+        <div>Estamos trabajando para resolver tu gestión. Puede demorar hasta 7 días hábiles.</div>
+      `;
     }
-  }
+    form.style.display="none";
+  })
+  .catch(()=>{
+    loader.style.display = "none";
+    mensaje.innerText="Error al enviar el formulario.";
+    btnEnviar.disabled = false;
+    btnEnviar.textContent = "Enviar solicitud";
+  });
 
-  // GUARDAR ARCHIVO EN DRIVE (ID CORRECTO)
-  let driveURL = "";
-  if (comprobanteBase64) {
-    const folder = DriveApp.getFolderById("1aqyv72CSRTiGelrz2vXUGvEhd1Ogyyno");
-    const blob = Utilities.newBlob(
-      Utilities.base64Decode(comprobanteBase64),
-      "application/octet-stream",
-      "comprobante"
-    );
-    const file = folder.createFile(blob);
-    driveURL = file.getUrl();
-  }
+});
+</script>
 
-  // GENERAR CASE ID
-  const caseId = "CASE-" + Math.floor(Math.random() * 900000 + 100000);
-
-  // GUARDAR EN LA HOJA
-  sheet.appendRow([
-    new Date(),
-    nombre,
-    dni,
-    cuil,
-    cbu,
-    correo,
-    comprobanteBase64,
-    driveURL,
-    caseId
-  ]);
-
-  return ContentService.createTextOutput(caseId);
-}
+</body>
+</html>
