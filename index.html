@@ -147,16 +147,15 @@ function convertirBase64(file){
 form.addEventListener("submit", async function(e){
   e.preventDefault();
 
-  // Bloquear botón y mostrar loader
-  btnEnviar.disabled = true;
-  btnEnviar.textContent = "Enviando...";
-  loader.style.display = "block";
-
   const file = document.getElementById("comprobanteFile").files[0];
   const base64 = await convertirBase64(file);
 
   const formData = new FormData(form);
   formData.append("comprobante", base64);
+
+  btnEnviar.disabled = true;
+  btnEnviar.textContent = "Enviando...";
+  loader.style.display = "block";
 
   fetch(scriptURL,{
     method:"POST",
@@ -175,7 +174,7 @@ form.addEventListener("submit", async function(e){
       mensaje.innerHTML = `
         <img src="tilde-verificacion.png">
         <div class="case">Número de caso: ${result}</div>
-        <div>Esta gestión puede demorar hasta 7 días hábiles, haremos todo lo posible para resolverlo antes.</div>
+        <div>Estamos trabajando para resolver tu gestión. Puede demorar hasta 7 días hábiles.</div>
       `;
     }
     form.style.display="none";
