@@ -54,8 +54,9 @@ button {
   cursor: pointer;
 }
 
-button:hover {
-  background: #0056b3;
+button:disabled {
+  background: #7aaef5;
+  cursor: not-allowed;
 }
 
 .message {
@@ -73,6 +74,23 @@ button:hover {
 .case {
   font-weight: bold;
   margin-top: 10px;
+}
+
+/* Loader */
+.loader {
+  display: none;
+  margin: 20px auto;
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #007bff;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
 </head>
@@ -98,9 +116,11 @@ button:hover {
 <label>Adjunta el comprobante</label>
 <input type="file" id="comprobanteFile" accept="image/*,.pdf" required>
 
-<button type="submit">Enviar solicitud</button>
+<button id="btnEnviar" type="submit">Enviar solicitud</button>
 
 </form>
+
+<div class="loader" id="loader"></div>
 
 <div class="message" id="mensaje"></div>
 
@@ -108,10 +128,12 @@ button:hover {
 
 <script>
 
-const scriptURL = "https://script.google.com/macros/s/AKfycbyZ_mOehySAOWZLxK9-QfvFcCDFe3kM_aWpcD5xrObNdnh_XXatwF3vzMnsntNK44OQeg/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbx9MmByPUA7HrmWfP4rZLYcsid1BNKM-Kt8k5WgBtoD3PfIGigCGXx_eii55t-M64Vh/exec";
 
 const form = document.getElementById("formulario");
 const mensaje = document.getElementById("mensaje");
+const loader = document.getElementById("loader");
+const btnEnviar = document.getElementById("btnEnviar");
 
 function convertirBase64(file){
   return new Promise((resolve,reject)=>{
@@ -125,6 +147,11 @@ function convertirBase64(file){
 form.addEventListener("submit", async function(e){
   e.preventDefault();
 
+  // Bloquear botón y mostrar loader
+  btnEnviar.disabled = true;
+  btnEnviar.textContent = "Enviando...";
+  loader.style.display = "block";
+
   const file = document.getElementById("comprobanteFile").files[0];
   const base64 = await convertirBase64(file);
 
@@ -137,6 +164,8 @@ form.addEventListener("submit", async function(e){
   })
   .then(res=>res.text())
   .then(result=>{
+    loader.style.display = "none";
+
     if(result === "YA_EXISTE"){
       mensaje.innerHTML = `
         <img src="x-roja.png">
@@ -146,13 +175,16 @@ form.addEventListener("submit", async function(e){
       mensaje.innerHTML = `
         <img src="tilde-verificacion.png">
         <div class="case">Número de caso: ${result}</div>
-        <div>Te contactaremos dentro de 24 a 48hs hábiles.</div>
+        <div>Esta gestión puede demorar hasta 7 días hábiles, haremos todo lo posible para resolverlo antes.</div>
       `;
     }
     form.style.display="none";
   })
   .catch(()=>{
+    loader.style.display = "none";
     mensaje.innerText="Error al enviar el formulario.";
+    btnEnviar.disabled = false;
+    btnEnviar.textContent = "Enviar solicitud";
   });
 
 });
@@ -160,4 +192,3 @@ form.addEventListener("submit", async function(e){
 
 </body>
 </html>
-
