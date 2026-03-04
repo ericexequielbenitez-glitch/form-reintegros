@@ -153,6 +153,9 @@ form.addEventListener("submit", async function(e){
   const formData = new FormData(form);
   formData.append("comprobante", base64);
 
+  // Delay para evitar cancelación en móviles
+  await new Promise(r => setTimeout(r, 150));
+
   btnEnviar.disabled = true;
   btnEnviar.textContent = "Enviando...";
   loader.style.display = "block";
